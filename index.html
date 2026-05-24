@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confecciones · Control de Producción</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F2ED;
+    --surface: #FFFFFF;
+    --surface2: #FAFAF8;
+    --border: #E2DDD6;
+    --border2: #CBC5BC;
+    --text: #1A1814;
+    --text2: #6B6560;
+    --text3: #9E9892;
+    --accent: #2D5A27;
+    --accent-light: #EBF2EA;
+    --accent-mid: #4A8A42;
+    --danger: #C0392B;
+    --danger-light: #FAEAEA;
+    --warning: #B8860B;
+    --warning-light: #FDF6E3;
+    --pending: #7B5E2A;
+    --pending-light: #FDF0DC;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; }
+
+  /* ── LOGIN ── */
+  #screen-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem 2rem; width: 100%; max-width: 380px; box-shadow: var(--shadow); }
+  .login-logo { text-align: center; margin-bottom: 2rem; }
+  .login-logo svg { width: 48px; height: 48px; }
+  .login-logo h1 { font-size: 20px; font-weight: 600; margin-top: 12px; letter-spacing: -0.3px; }
+  .login-logo p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 15px; background: var(--surface2); transition: border 0.15s; outline: none; }
+  .field input:focus { border-color: var(--accent-mid); }
+  .btn-primary { width: 100%; padding: 11px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-family: inherit; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .btn-primary:hover { background: var(--accent-mid); }
+  .login-error { color: var(--danger); font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+
+  /* ── LAYOUT ── */
+  #screen-app { display: none; min-height: 100vh; flex-direction: column; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-logo { width: 28px; height: 28px; }
+  .header-title { font-size: 15px; font-weight: 600; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .user-chip { background: var(--accent-light); color: var(--accent); border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: 500; }
+  .btn-icon { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; color: var(--text2); font-family: inherit; transition: all 0.15s; }
+  .btn-icon:hover { border-color: var(--border2); background: var(--surface2); }
+  .main-content { flex: 1; padding: 1.5rem; max-width: 900px; margin: 0 auto; width: 100%; }
+
+  /* ── NAV TABS ── */
+  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 1.5rem; width: fit-content; }
+  .tab { padding: 7px 16px; border-radius: 7px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text2); transition: all 0.15s; border: none; background: none; font-family: inherit; }
+  .tab.active { background: var(--accent); color: #fff; }
+  .tab:hover:not(.active) { background: var(--bg); color: var(--text); }
+
+  /* ── CARDS ── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .card-title { font-size: 15px; font-weight: 600; }
+  .card-subtitle { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .form-field input, .form-field select, .form-field textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+    font-family: inherit; font-size: 14px; background: var(--surface2); outline: none; transition: border 0.15s; resize: vertical;
+  }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent-mid); }
+  .btn-submit { padding: 10px 24px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .btn-submit:hover { background: var(--accent-mid); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── BADGE ── */
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .badge-pending { background: var(--pending-light); color: var(--pending); }
+  .badge-approved { background: var(--accent-light); color: var(--accent); }
+  .badge-rejected { background: var(--danger-light); color: var(--danger); }
+
+  /* ── REGISTROS TABLE ── */
+  .registros-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .registros-table th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); border-bottom: 1px solid var(--border); }
+  .registros-table td { padding: 10px 12px; border-bottom: 1px solid var(--bg); vertical-align: middle; }
+  .registros-table tr:last-child td { border-bottom: none; }
+  .registros-table tr:hover td { background: var(--surface2); }
+  .mono { font-family: 'DM Mono', monospace; font-size: 13px; }
+
+  /* ── STATS ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+  .stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .stat-label { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 22px; font-weight: 600; margin-top: 4px; letter-spacing: -0.5px; }
+  .stat-value.green { color: var(--accent); }
+  .stat-value.orange { color: var(--pending); }
+
+  /* ── DATE NAV ── */
+  .date-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .date-nav input[type=date] { padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 14px; background: var(--surface); outline: none; }
+  .btn-small { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-family: inherit; font-size: 13px; cursor: pointer; color: var(--text2); }
+  .btn-small:hover { border-color: var(--border2); background: var(--surface2); }
+
+  /* ── JEFE: approve buttons ── */
+  .btn-approve { padding: 4px 10px; background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-mid); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 500; }
+  .btn-approve:hover { background: var(--accent); color: #fff; }
+  .btn-reject { padding: 4px 10px; background: var(--danger-light); color: var(--danger); border: 1px solid #E8A9A3; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 500; margin-left: 4px; }
+  .btn-reject:hover { background: var(--danger); color: #fff; }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--text2); }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.4; }
+  .empty p { font-size: 14px; }
+
+  /* ── TOAST ── */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: #fff; padding: 10px 18px; border-radius: var(--radius); font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+  #toast.show { opacity: 1; }
+
+  /* ── SPINNER ── */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── JEFE: filtro operaria ── */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+  .filter-row select { padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 14px; background: var(--surface); outline: none; }
+  .filter-row input[type=date] { padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 14px; background: var(--surface); outline: none; }
+
+  /* ── CONFIG notice ── */
+  .config-notice { background: #FFF8E6; border: 1px solid #F0C040; border-radius: var(--radius); padding: 12px 14px; font-size: 13px; color: #7A5C00; margin-bottom: 1.25rem; line-height: 1.6; }
+  .config-notice strong { display: block; margin-bottom: 4px; }
+  code { background: #F0E8C8; padding: 1px 5px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .main-content { padding: 1rem; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ LOGIN ══════════════════════ -->
+<div id="screen-login">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="12" fill="#2D5A27"/>
+        <path d="M10 34 Q24 14 38 34" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M14 30 Q24 18 34 30" stroke="#A8D5A2" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="24" cy="22" r="3" fill="#fff"/>
+      </svg>
+      <h1>Producción Textil</h1>
+      <p>Control de operarias</p>
+    </div>
+    <div class="field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="Ej: operaria1" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>PIN / Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Ingresar</button>
+    <p class="login-error" id="login-error">Usuario o contraseña incorrectos</p>
+  </div>
+</div>
+
+<!-- ══════════════════════ APP ══════════════════════ -->
+<div id="screen-app">
+  <header>
+    <div class="header-left">
+      <svg class="header-logo" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="7" fill="#2D5A27"/>
+        <path d="M5 20 Q14 8 23 20" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <circle cx="14" cy="13" r="2" fill="#A8D5A2"/>
+      </svg>
+      <span class="header-title">Producción</span>
+    </div>
+    <div class="header-right">
+      <span class="user-chip" id="header-username">—</span>
+      <button class="btn-icon" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <div class="main-content">
+
+    <!-- CONFIG NOTICE (mostrar siempre arriba) -->
+    <div class="config-notice" id="config-notice">
+      <strong>⚙️ Configuración requerida (leer antes de usar)</strong>
+      Reemplaza <code>TU_SCRIPT_URL_AQUI</code> en el JS con la URL de tu Google Apps Script publicado.<br>
+      También edita la sección <code>USUARIOS</code> en el JS para agregar las operarias y sus PINs.
+      <a href="#" onclick="showSetupGuide()" style="color:#7A5C00; font-weight:600; margin-left:6px;">Ver guía de configuración →</a>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs" id="tabs-operaria">
+      <button class="tab active" onclick="showTab('registrar')">Registrar producción</button>
+      <button class="tab" onclick="showTab('mis-registros')">Mis registros</button>
+    </div>
+    <div class="tabs" id="tabs-jefe" style="display:none">
+      <button class="tab active" onclick="showTab('jefe-registros')">Todos los registros</button>
+      <button class="tab" onclick="showTab('jefe-resumen')">Resumen</button>
+    </div>
+
+    <!-- ── VISTA: REGISTRAR ── -->
+    <div id="view-registrar">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Nuevo registro de producción</div>
+            <div class="card-subtitle" id="registro-fecha-label">Hoy: —</div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Referencia / Producto</label>
+            <input type="text" id="f-referencia" placeholder="Ej: Camisa ref-045">
+          </div>
+          <div class="form-field">
+            <label>Cantidad de piezas</label>
+            <input type="number" id="f-cantidad" min="1" placeholder="0">
+          </div>
+          <div class="form-field">
+            <label>Operación realizada</label>
+            <select id="f-operacion">
+              <option value="">— Seleccionar —</option>
+              <option>Corte</option>
+              <option>Costura recta</option>
+              <option>Overlock</option>
+              <option>Bordado</option>
+              <option>Acabados / terminado</option>
+              <option>Planchado</option>
+              <option>Empaque</option>
+              <option>Control de calidad</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-field full">
+            <label>Observaciones</label>
+            <textarea id="f-observaciones" rows="2" placeholder="Notas opcionales sobre la producción del día…"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:1rem; display:flex; align-items:center; gap:12px;">
+          <button class="btn-submit" id="btn-enviar" onclick="enviarRegistro()">Enviar registro</button>
+          <span id="form-status" style="font-size:13px; color:var(--text2);"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VISTA: MIS REGISTROS ── -->
+    <div id="view-mis-registros" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Mis registros</div>
+          <div class="date-nav">
+            <input type="date" id="mis-fecha-filtro" onchange="cargarMisRegistros()">
+            <button class="btn-small" onclick="limpiarFiltroMis()">Todos</button>
+          </div>
+        </div>
+        <div id="mis-registros-content">
+          <div class="empty"><div class="empty-icon">📋</div><p>Cargando registros…</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VISTA: JEFE TODOS ── -->
+    <div id="view-jefe-registros" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Todos los registros</div>
+        </div>
+        <div class="filter-row">
+          <select id="filtro-operaria" onchange="cargarTodosRegistros()">
+            <option value="">Todas las operarias</option>
+          </select>
+          <input type="date" id="filtro-fecha" onchange="cargarTodosRegistros()">
+          <select id="filtro-estado" onchange="cargarTodosRegistros()">
+            <option value="">Todos los estados</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Aprobado">Aprobado</option>
+            <option value="Rechazado">Rechazado</option>
+          </select>
+          <button class="btn-small" onclick="limpiarFiltrosJefe()">Limpiar</button>
+        </div>
+        <div id="jefe-registros-content">
+          <div class="empty"><div class="empty-icon">📋</div><p>Cargando…</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VISTA: JEFE RESUMEN ── -->
+    <div id="view-jefe-resumen" style="display:none">
+      <div class="stats-grid" id="resumen-stats"></div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:1rem;">Piezas por operaria</div>
+        <div id="resumen-por-operaria"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ══════════════════════ MODAL GUÍA ══════════════════════ -->
+<div id="modal-guia" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; padding:1rem;">
+  <div style="background:#fff; border-radius:16px; max-width:680px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="padding:1.5rem 1.5rem 0; display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <div style="font-size:17px; font-weight:600; color:#1A1814;">⚙️ Guía de configuración con Google Sheets</div>
+        <div style="font-size:13px; color:#6B6560; margin-top:4px;">Sigue estos 4 pasos para conectar la app con tu hoja de cálculo</div>
+      </div>
+      <button onclick="cerrarGuia()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9E9892;line-height:1;padding:0 0 0 12px;">✕</button>
+    </div>
+    <div style="padding:1.25rem 1.5rem; font-size:14px; color:#1A1814; line-height:1.8;">
+
+      <div style="background:#EBF2EA; border-radius:10px; padding:12px 14px; margin-bottom:1rem;">
+        <strong style="color:#2D5A27;">Paso 1 — Crea el Google Sheet</strong><br>
+        Crea una hoja llamada <code style="background:#C8E0C5;padding:1px 5px;border-radius:4px;font-size:12px;">Produccion</code> (sin tilde) con estas columnas en la fila 1, <strong>exactamente en este orden</strong>:
+        <div style="margin-top:8px; overflow-x:auto;">
+          <table style="border-collapse:collapse; font-size:12px; width:100%;">
+            <tr style="background:#2D5A27; color:#fff;">
+              <td style="padding:4px 8px; border-radius:4px 0 0 4px;">A: ID</td>
+              <td style="padding:4px 8px;">B: Marca_Temporal</td>
+              <td style="padding:4px 8px;">C: Fecha_Produccion</td>
+              <td style="padding:4px 8px;">D: Operaria</td>
+              <td style="padding:4px 8px;">E: Usuario</td>
+              <td style="padding:4px 8px;">F: Referencia</td>
+              <td style="padding:4px 8px;">G: Cantidad</td>
+              <td style="padding:4px 8px;">H: Operacion</td>
+              <td style="padding:4px 8px;">I: Observaciones</td>
+              <td style="padding:4px 8px; border-radius:0 4px 4px 0;">J: Estado</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div style="background:#F0F6FF; border-radius:10px; padding:12px 14px; margin-bottom:1rem;">
+        <strong style="color:#185FA5;">Paso 2 — Crea el Apps Script</strong><br>
+        En tu Google Sheet ve a <strong>Extensiones → Apps Script</strong>, borra el código que aparece por defecto y pega el siguiente:
+        <div style="position:relative; margin-top:10px;">
+          <button onclick="copiarScript()" style="position:absolute;top:8px;right:8px;background:#185FA5;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;">Copiar código</button>
+          <pre id="codigo-script" style="background:#1E1E2E;color:#CDD6F4;padding:14px;border-radius:8px;font-size:11.5px;overflow-x:auto;line-height:1.6;margin-top:0;">function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Produccion");
+  var p = JSON.parse(decodeURIComponent(e.parameter.payload || '{}'));
+  var callback = e.parameter.callback || '';
+  var res = {};
+
+  if (p.accion === 'registrar') {
+    var id = Utilities.getUuid().slice(0, 8);
+    sheet.appendRow([
+      id,
+      p.marca_temporal,
+      p.fecha,
+      p.operaria,
+      p.usuario,
+      p.referencia,
+      p.cantidad,
+      p.operacion,
+      p.observaciones,
+      'Pendiente'
+    ]);
+    res = { ok: true };
+
+  } else if (p.accion === 'obtener') {
+    var data = sheet.getDataRange().getValues();
+    var registros = [];
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][4]) === String(p.usuario))
+        registros.push({
+          id: data[i][0], marca_temporal: data[i][1],
+          fecha: data[i][2], operaria: data[i][3],
+          usuario: data[i][4], referencia: data[i][5],
+          cantidad: data[i][6], operacion: data[i][7],
+          observaciones: data[i][8], estado: data[i][9]
+        });
+    }
+    res = { registros: registros };
+
+  } else if (p.accion === 'obtenerTodos') {
+    var data = sheet.getDataRange().getValues();
+    var registros = [];
+    for (var i = 1; i < data.length; i++) {
+      registros.push({
+        id: data[i][0], marca_temporal: data[i][1],
+        fecha: data[i][2], operaria: data[i][3],
+        usuario: data[i][4], referencia: data[i][5],
+        cantidad: data[i][6], operacion: data[i][7],
+        observaciones: data[i][8], estado: data[i][9]
+      });
+    }
+    res = { registros: registros };
+
+  } else if (p.accion === 'actualizarEstado') {
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(p.id)) {
+        sheet.getRange(i + 1, 10).setValue(p.estado);
+        break;
+      }
+    }
+    res = { ok: true };
+  }
+
+  var json = JSON.stringify(res);
+  if (callback) {
+    return ContentService
+      .createTextOutput(callback + '(' + json + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService
+    .createTextOutput(json)
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+        </div>
+      </div>
+
+      <div style="background:#FDF6E3; border-radius:10px; padding:12px 14px; margin-bottom:1rem;">
+        <strong style="color:#7A5C00;">Paso 3 — Publica como Web App</strong><br>
+        En el editor de Apps Script: <strong>Implementar → Nueva implementación</strong><br>
+        • Tipo: <strong>Aplicación web</strong><br>
+        • Ejecutar como: <strong>Yo (tu cuenta Google)</strong><br>
+        • Quién tiene acceso: <strong>Cualquier usuario</strong><br>
+        Haz clic en <strong>Implementar</strong> y <strong>autoriza los permisos</strong> cuando te los pida.
+      </div>
+
+      <div style="background:#FAEAEA; border-radius:10px; padding:12px 14px; margin-bottom:1rem;">
+        <strong style="color:#C0392B;">Paso 4 — Pega la URL en el HTML</strong><br>
+        Copia la URL que te da Google (termina en <code style="background:#F5C0BC;padding:1px 5px;border-radius:4px;font-size:12px;">/exec</code>).<br>
+        Abre este archivo HTML en un editor de texto, busca la línea:<br>
+        <code style="background:#F5C0BC;padding:2px 6px;border-radius:4px;font-size:12px;">const SCRIPT_URL = 'TU_SCRIPT_URL_AQUI';</code><br>
+        y reemplaza <code style="background:#F5C0BC;padding:1px 5px;border-radius:4px;font-size:12px;">TU_SCRIPT_URL_AQUI</code> con tu URL. Guarda y vuelve a abrir el HTML.
+      </div>
+
+      <div style="text-align:center; padding-top:4px;">
+        <button onclick="cerrarGuia()" style="background:#2D5A27;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;">Entendido, cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════╗
+// ║  CONFIGURACIÓN — edita esta sección                     ║
+// ╚══════════════════════════════════════════════════════════╝
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4v5MPksyljWGOlWHsDfXSQq8zb47dkD9VFb8zBalbBwXMwcJqsTHaZd0vrHsGecZjyA/exec';
+// Pega aquí la URL de tu Google Apps Script Web App
+// Ej: 'https://script.google.com/macros/s/AKfy.../exec'
+
+const USUARIOS = {
+  // usuario: { pin: 'XXXX', nombre: 'Nombre Completo', rol: 'operaria' | 'jefe' }
+  'jefe': { pin: '1234', nombre: 'Jefe de Producción', rol: 'jefe' },
+  'operaria1': { pin: '1111', nombre: 'Ana García', rol: 'operaria' },
+  'operaria2': { pin: '2222', nombre: 'María López', rol: 'operaria' },
+  'operaria3': { pin: '3333', nombre: 'Lucía Torres', rol: 'operaria' },
+  'operaria4': { pin: '4444', nombre: 'Carmen Díaz', rol: 'operaria' },
+};
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  ESTADO DE LA APP                                       ║
+// ╚══════════════════════════════════════════════════════════╝
+
+let currentUser = null;
+let allRegistros = [];
+let activeTab = '';
+
+function todayStr() {
+  return new Date().toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+function todayISO() {
+  return new Date().toISOString().slice(0,10);
+}
+
+// ── LOGIN ──
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim().toLowerCase();
+  const p = document.getElementById('login-pass').value.trim();
+  const user = USUARIOS[u];
+  if (!user || user.pin !== p) {
+    document.getElementById('login-error').style.display = 'block';
+    return;
+  }
+  document.getElementById('login-error').style.display = 'none';
+  currentUser = { username: u, ...user };
+  startApp();
+}
+
+function doLogout() {
+  currentUser = null;
+  allRegistros = [];
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('screen-app').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+// ── INICIAR APP ──
+function startApp() {
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-app').style.display = 'flex';
+  document.getElementById('header-username').textContent = currentUser.nombre;
+  document.getElementById('registro-fecha-label').textContent = 'Hoy: ' + todayStr();
+
+  const esJefe = currentUser.rol === 'jefe';
+  document.getElementById('tabs-operaria').style.display = esJefe ? 'none' : 'flex';
+  document.getElementById('tabs-jefe').style.display = esJefe ? 'flex' : 'none';
+
+  if (esJefe) {
+    // Poblar selector de operarias
+    const sel = document.getElementById('filtro-operaria');
+    sel.innerHTML = '<option value="">Todas las operarias</option>';
+    Object.entries(USUARIOS).filter(([,u])=>u.rol==='operaria').forEach(([k,u])=>{
+      sel.innerHTML += `<option value="${u.nombre}">${u.nombre}</option>`;
+    });
+    showTab('jefe-registros');
+  } else {
+    showTab('registrar');
+  }
+}
+
+// ── TABS ──
+function showTab(tab) {
+  activeTab = tab;
+  ['registrar','mis-registros','jefe-registros','jefe-resumen'].forEach(v => {
+    document.getElementById('view-'+v).style.display = 'none';
+  });
+  document.getElementById('view-'+tab).style.display = 'block';
+
+  // actualizar tab activo
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event && event.target && event.target.classList.add('active');
+
+  if (tab === 'mis-registros') cargarMisRegistros();
+  if (tab === 'jefe-registros') cargarTodosRegistros();
+  if (tab === 'jefe-resumen') cargarResumen();
+}
+
+// ── ENVIAR REGISTRO ──
+async function enviarRegistro() {
+  const ref = document.getElementById('f-referencia').value.trim();
+  const cant = document.getElementById('f-cantidad').value.trim();
+  const op = document.getElementById('f-operacion').value;
+  const obs = document.getElementById('f-observaciones').value.trim();
+
+  if (!ref || !cant || !op) {
+    toast('Completa referencia, cantidad y operación');
+    return;
+  }
+
+  const btn = document.getElementById('btn-enviar');
+  const status = document.getElementById('form-status');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Enviando…';
+  status.textContent = '';
+
+  const ahora = new Date();
+  const marcaTemporal = ahora.toLocaleString('es-CO', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+  const payload = {
+    accion: 'registrar',
+    operaria: currentUser.nombre,
+    usuario: currentUser.username,
+    marca_temporal: marcaTemporal,
+    fecha: todayISO(),
+    referencia: ref,
+    cantidad: parseInt(cant),
+    operacion: op,
+    observaciones: obs,
+    estado: 'Pendiente'
+  };
+
+  try {
+    const res = await callScript(payload);
+    if (res && res.ok) {
+      toast('✓ Registro enviado correctamente');
+      document.getElementById('f-referencia').value = '';
+      document.getElementById('f-cantidad').value = '';
+      document.getElementById('f-operacion').value = '';
+      document.getElementById('f-observaciones').value = '';
+      status.textContent = '✓ Guardado en Google Sheets';
+      status.style.color = 'var(--accent)';
+    } else {
+      throw new Error(res?.error || 'Sin respuesta');
+    }
+  } catch(e) {
+    toast('Error al enviar. Verifica la URL del script.');
+    status.textContent = 'Error: ' + e.message;
+    status.style.color = 'var(--danger)';
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'Enviar registro';
+}
+
+// ── CARGAR MIS REGISTROS ──
+async function cargarMisRegistros() {
+  const cont = document.getElementById('mis-registros-content');
+  cont.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><p>Cargando…</p></div>';
+  const fechaFiltro = document.getElementById('mis-fecha-filtro').value;
+  try {
+    const res = await callScript({ accion: 'obtener', usuario: currentUser.username });
+    let datos = res.registros || [];
+    if (fechaFiltro) datos = datos.filter(r => r.fecha === fechaFiltro);
+    renderTablaRegistros(cont, datos, false);
+  } catch(e) {
+    cont.innerHTML = '<div class="empty"><p style="color:var(--danger)">Error al cargar. Verifica la URL del script.</p></div>';
+  }
+}
+
+function limpiarFiltroMis() {
+  document.getElementById('mis-fecha-filtro').value = '';
+  cargarMisRegistros();
+}
+
+// ── CARGAR TODOS (JEFE) ──
+async function cargarTodosRegistros() {
+  const cont = document.getElementById('jefe-registros-content');
+  cont.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><p>Cargando…</p></div>';
+  try {
+    const res = await callScript({ accion: 'obtenerTodos' });
+    allRegistros = res.registros || [];
+    aplicarFiltrosJefe();
+  } catch(e) {
+    cont.innerHTML = '<div class="empty"><p style="color:var(--danger)">Error al cargar. Verifica la URL del script.</p></div>';
+  }
+}
+
+function aplicarFiltrosJefe() {
+  const cont = document.getElementById('jefe-registros-content');
+  let datos = [...allRegistros];
+  const filtOp = document.getElementById('filtro-operaria').value;
+  const filtFe = document.getElementById('filtro-fecha').value;
+  const filtEs = document.getElementById('filtro-estado').value;
+  if (filtOp) datos = datos.filter(r => r.operaria === filtOp);
+  if (filtFe) datos = datos.filter(r => r.fecha === filtFe);
+  if (filtEs) datos = datos.filter(r => r.estado === filtEs);
+  renderTablaRegistros(cont, datos, true);
+}
+
+function limpiarFiltrosJefe() {
+  document.getElementById('filtro-operaria').value = '';
+  document.getElementById('filtro-fecha').value = '';
+  document.getElementById('filtro-estado').value = '';
+  aplicarFiltrosJefe();
+}
+
+// ── CARGAR RESUMEN ──
+async function cargarResumen() {
+  try {
+    const res = await callScript({ accion: 'obtenerTodos' });
+    const datos = res.registros || [];
+    const total = datos.length;
+    const aprobados = datos.filter(r=>r.estado==='Aprobado').length;
+    const pendientes = datos.filter(r=>r.estado==='Pendiente').length;
+    const totalPiezas = datos.filter(r=>r.estado==='Aprobado').reduce((s,r)=>s+(parseInt(r.cantidad)||0),0);
+
+    document.getElementById('resumen-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total registros</div><div class="stat-value">${total}</div></div>
+      <div class="stat-card"><div class="stat-label">Aprobados</div><div class="stat-value green">${aprobados}</div></div>
+      <div class="stat-card"><div class="stat-label">Pendientes</div><div class="stat-value orange">${pendientes}</div></div>
+      <div class="stat-card"><div class="stat-label">Piezas aprobadas</div><div class="stat-value green">${totalPiezas.toLocaleString()}</div></div>
+    `;
+
+    // agrupar por operaria
+    const por = {};
+    datos.filter(r=>r.estado==='Aprobado').forEach(r=>{
+      por[r.operaria] = (por[r.operaria]||0) + (parseInt(r.cantidad)||0);
+    });
+    const rows = Object.entries(por).sort((a,b)=>b[1]-a[1]);
+    const maxV = rows[0]?.[1] || 1;
+    document.getElementById('resumen-por-operaria').innerHTML = rows.length ? rows.map(([op,v])=>`
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+          <span>${op}</span><span style="font-weight:600;color:var(--accent);">${v.toLocaleString()} piezas</span>
+        </div>
+        <div style="background:var(--bg);border-radius:4px;height:8px;overflow:hidden;">
+          <div style="background:var(--accent);height:100%;border-radius:4px;width:${Math.round(v/maxV*100)}%;transition:width 0.4s;"></div>
+        </div>
+      </div>
+    `).join('') : '<p style="font-size:14px;color:var(--text2);">Sin datos aprobados aún.</p>';
+
+  } catch(e) {
+    document.getElementById('resumen-stats').innerHTML = '<p style="color:var(--danger);font-size:14px;">Error al cargar datos.</p>';
+  }
+}
+
+// ── RENDER TABLA ──
+function renderTablaRegistros(cont, datos, esJefe) {
+  if (!datos.length) {
+    cont.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No hay registros para mostrar.</p></div>';
+    return;
+  }
+  const rows = datos.slice().reverse().map((r,i) => {
+    const badgeClass = r.estado === 'Aprobado' ? 'badge-approved' : r.estado === 'Rechazado' ? 'badge-rejected' : 'badge-pending';
+    const acciones = esJefe && r.estado === 'Pendiente' ? `
+      <button class="btn-approve" onclick="cambiarEstado('${r.id}','Aprobado')">Aprobar</button>
+      <button class="btn-reject" onclick="cambiarEstado('${r.id}','Rechazado')">Rechazar</button>
+    ` : '';
+    const colOperaria = esJefe ? `<td>${r.operaria || '—'}</td>` : '';
+    return `<tr>
+      <td class="mono">${r.fecha || '—'}</td>
+      ${colOperaria}
+      <td>${r.referencia || '—'}</td>
+      <td style="text-align:right; font-weight:500;">${Number(r.cantidad||0).toLocaleString()}</td>
+      <td>${r.operacion || '—'}</td>
+      <td><span class="badge ${badgeClass}">${r.estado || 'Pendiente'}</span></td>
+      <td>${acciones}</td>
+    </tr>`;
+  }).join('');
+
+  const colOpHead = esJefe ? '<th>Operaria</th>' : '';
+  cont.innerHTML = `<div style="overflow-x:auto;">
+    <table class="registros-table">
+      <thead><tr>
+        <th>Fecha</th>${colOpHead}<th>Referencia</th><th style="text-align:right">Piezas</th><th>Operación</th><th>Estado</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+// ── CAMBIAR ESTADO (JEFE) ──
+async function cambiarEstado(id, nuevoEstado) {
+  if (!id) { toast('ID no encontrado'); return; }
+  try {
+    const res = await callScript({ accion: 'actualizarEstado', id, estado: nuevoEstado });
+    if (res && res.ok) {
+      toast(nuevoEstado === 'Aprobado' ? '✓ Registro aprobado' : '✗ Registro rechazado');
+      cargarTodosRegistros();
+      if (activeTab === 'jefe-resumen') cargarResumen();
+    } else throw new Error(res?.error);
+  } catch(e) {
+    toast('Error al actualizar estado');
+  }
+}
+
+// ── GOOGLE APPS SCRIPT CALL (JSONP — evita bloqueo CORS) ──
+function callScript(payload) {
+  if (SCRIPT_URL === 'TU_SCRIPT_URL_AQUI') {
+    return Promise.resolve(mockResponse(payload));
+  }
+  return new Promise((resolve, reject) => {
+    const cbName = 'gascb_' + Date.now();
+    const tag = document.createElement('script');
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Timeout — verifica que el script esté publicado y con acceso "Cualquier usuario"'));
+    }, 15000);
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (tag.parentNode) tag.parentNode.removeChild(tag);
+    }
+    window[cbName] = function(data) { cleanup(); resolve(data); };
+    tag.onerror = () => { cleanup(); reject(new Error('URL inválida o script no publicado')); };
+    tag.src = SCRIPT_URL + '?callback=' + cbName + '&payload=' + encodeURIComponent(JSON.stringify(payload));
+    document.head.appendChild(tag);
+  });
+}
+
+// ── MODO DEMO (sin Google Sheets configurado) ──
+const demoData = [];
+let demoId = 100;
+function mockResponse(p) {
+  if (p.accion === 'registrar') {
+    demoData.push({ id: String(++demoId), ...p, marca_temporal: p.marca_temporal || new Date().toLocaleString('es-CO') });
+    return { ok: true };
+  }
+  if (p.accion === 'obtener') {
+    return { registros: demoData.filter(r=>r.usuario===p.usuario) };
+  }
+  if (p.accion === 'obtenerTodos') {
+    return { registros: demoData };
+  }
+  if (p.accion === 'actualizarEstado') {
+    const r = demoData.find(r=>r.id===p.id);
+    if (r) r.estado = p.estado;
+    return { ok: true };
+  }
+  return { ok: false, error: 'Acción desconocida' };
+}
+
+// ── TOAST ──
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ── GUÍA CONFIGURACIÓN ──
+function showSetupGuide() {
+  document.getElementById('modal-guia').style.display = 'flex';
+}
+function cerrarGuia() {
+  document.getElementById('modal-guia').style.display = 'none';
+}
+function copiarScript() {
+  const codigo = document.getElementById('codigo-script').textContent;
+  navigator.clipboard.writeText(codigo).then(()=>toast('✓ Código copiado al portapapeles'));
+}
+
+// ── INIT ──
+document.getElementById('mis-fecha-filtro').value = todayISO();
+</script>
+</body>
+</html>
